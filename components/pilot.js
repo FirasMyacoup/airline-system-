@@ -1,42 +1,18 @@
-'use strict';
-const events = require('./events');
-events.on('new-flight', tookOff);
+"use strict";
 
-function tookOff(payload) {
-    setTimeout(() => {
-        let Flight = {
-            event: 'took_off',
-            time: new Date().toLocaleString(),
-            Details: {
-            airLine: 'Jordanian Airlines',
-            flightID: payload.Details.flightID,
-            pilot: payload.Details.pilot,
-            destination: payload.Details.destination
-            }
-        }
-        console.log(`Pilot: flight with ID ‘${payload.Details.flightID}’ took-off`);
-        events.emit('took-off', Flight)
-    }, 4000);
-}
-events.on('took-off', flightArrived);
-function flightArrived(payload) {
-    setTimeout(() => {
-        let Flight = {
-            event: 'arrived',
-            time: new Date().toLocaleString(),
-            Details: {
-            airLine: 'Jordanian Airlines',
-            flightID: payload.Details.flightID,
-            pilot: payload.Details.pilot,
-            destination: payload.Details.destination
-            }
-        }
-        console.log(`Pilot: flight with ID '${payload.Details.flightID}' has arrived`);
-        events.emit('arrived', Flight)
+const io = require("socket.io-client");
 
-    }, 3000)
+const airlineSocket = io.connect(`${process.env.PORT}/airline` || "http://localhost:4000/airline");
+const socket = io(process.env.PORT || "http://localhost:4000");
 
-}
+socket.on("new-flight", (flightDetails) => {
+  setTimeout(() => {
+    console.log(`Pilot: flight with ID ${flightDetails.flightID} took-off`);
+    airlineSocket.emit("took-off", flightDetails);
+  }, 4000);
 
-
-
+  setTimeout(() => {
+    console.log(`Pilot: flight with ID ${flightDetails.flightID} arrived`);
+    socket.emit("arrived", flightDetails);
+  }, 7000);
+});
