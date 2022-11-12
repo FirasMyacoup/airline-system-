@@ -1,27 +1,28 @@
-'use strict';
-const events = require('./events');
-const { faker } = require('@faker-js/faker');
-require('./pilot');
+"use strict";
+
+const io = require("socket.io-client");
+const socket = io(process.env.PORT || "http://localhost:4000");
+
+const { faker } = require("@faker-js/faker");
+const { v4: uuidv4 } = require("uuid");
 
 setInterval(() => {
-    let Flight = {
-        event: 'new-flight',
-        time: new Date().toLocaleString(),
-        Details: {
-        airLine: ' Jordanian Airlines',
-        flightID: faker.datatype.uuid(),
-        pilot: faker.name.findName(),
-        destination: faker.address.cityName()
-        }
-    }
-    console.log(`Manager: new flight with ID ‘${Flight.Details.flightID}’ have been scheduled`);
-    events.emit('new-flight', Flight)
-}, 10000)
+  let country = faker.address.country();
+  let city = faker.address.city();
+  let pilotName = faker.name.fullName();
+  let id = uuidv4();
 
+  const flightDetails = {
+    flightID: id,
+    airLine: "Royal Jordanian Airlines",
+    pilot: pilotName,
+    destination: `${city}, ${country}`,
+  };
 
-events.on('arrived', flightArrived);
-function flightArrived(Flight) {
-    setTimeout(() => {
-    console.log(`Manager: thank you for the flight, ${Flight.Details.pilot}`);
-    }, 30)
-}
+  console.log(`Manager: new flight with ID ${flightDetails.flightID} have been scheduled`);
+  socket.emit("new-flight", flightDetails);
+}, 10000);
+
+socket.on("arrived", (flightDetails) => {
+  console.log(`Manager: we’re greatly thankful for the amazing flight, ${flightDetails.pilot}`);
+});
